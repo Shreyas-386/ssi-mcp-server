@@ -23,7 +23,7 @@ class DownstreamResponseBase(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    ticker: str
+    ticker: str | None = None
 
 
 class DailyGraphsResponse(DownstreamResponseBase):

@@ -61,4 +61,6 @@ def extract_bearer_token(authorization_header: str | None) -> str | None:
 def get_downstream_auth_headers() -> dict[str, str]:
     """Build the Authorization header used when calling the SSi REST API."""
     settings = get_settings()
+    if not settings.ssi_api_key:
+        return {}
     return {AUTH_HEADER: f"{BEARER_PREFIX}{settings.ssi_api_key}"}

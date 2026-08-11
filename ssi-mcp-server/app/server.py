@@ -16,6 +16,16 @@ from starlette.responses import JSONResponse
 from app.config.settings import get_settings
 from app.services.api_client import SSIApiClient
 from app.tools import daily_graphs, historical_graphs, stock_price
+from app.validators.request_validator import (
+    validate_daily_graphs_request,
+    validate_historical_graphs_request,
+    validate_stock_price_request,
+)
+from app.services.response_formatter import (
+    parse_daily_graphs_response,
+    parse_historical_graphs_response,
+    parse_stock_price_response,
+)
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -41,6 +51,7 @@ def create_server(api_client: SSIApiClient | None = None) -> tuple[FastMCP, SSIA
         instructions=SERVER_INSTRUCTIONS,
         host=settings.host,
         port=settings.port,
+        stateless_http=True,
     )
 
     client = api_client or SSIApiClient()
@@ -53,6 +64,39 @@ def create_server(api_client: SSIApiClient | None = None) -> tuple[FastMCP, SSIA
     async def health(_: Request) -> JSONResponse:
         """Health endpoint for load balancer / orchestrator monitoring."""
         return JSONResponse({"status": "ok", "service": SERVER_NAME})
+
+    @mcp.custom_route("/chatgpt", methods=["POST"])
+    async def chatgpt(request: Request) -> JSONResponse:
+        """Dedicated stateless REST endpoint for ChatGPT Custom Actions."""
+        try:
+            body = await request.json()
+            if body.get("method") != "tools/call":
+                return JSONResponse({"error": "Only tools/call is supported"}, status_code=400)
+            
+            params = body.get("params", {})
+            name = params.get("name")
+            args = params.get("arguments", {})
+
+            if name == "get_daily_graphs":
+                req = validate_daily_graphs_request(ticker=args.get("ticker"), date=args.get("date"))
+                data = await client.get_daily_graphs(req.ticker, req.date)
+                resp = parse_daily_graphs_response(data)
+                return JSONResponse(resp.model_dump())
+            elif name == "get_daily_graphs_60_90_days":
+                req = validate_historical_graphs_request(ticker=args.get("ticker"), period=args.get("period"))
+                data = await client.get_daily_graphs_60_90_days(req.ticker, req.period)
+                resp = parse_historical_graphs_response(data)
+                return JSONResponse(resp.model_dump())
+            elif name == "get_stock_price":
+                req = validate_stock_price_request(ticker=args.get("ticker"), start_date=args.get("start_date"), end_date=args.get("end_date"))
+                data = await client.get_stock_price(req.ticker, req.start_date, req.end_date)
+                resp = parse_stock_price_response(data)
+                return JSONResponse(resp.model_dump())
+            else:
+                return JSONResponse({"error": f"Unknown tool: {name}"}, status_code=404)
+        except Exception as e:
+            logger.error("chatgpt_endpoint_error", error=str(e))
+            return JSONResponse({"error": str(e)}, status_code=500)
 
     logger.info(
         "server_initialized",
