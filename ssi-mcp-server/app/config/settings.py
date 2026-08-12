@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # --- Downstream SSi REST API --------------------------------------------
     ssi_api_base_url: str = Field(
-        default="https://api.ssi.example.com",
+        default="https://dailygraphs.finsoftai.com",
         description="Base URL of the existing SSi REST API platform.",
     )
     ssi_api_key: str = Field(

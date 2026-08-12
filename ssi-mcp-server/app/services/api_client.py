@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import asyncio
 from datetime import date
+from importlib.resources import path
 from typing import Any
+from urllib import response
 
 import httpx
 
@@ -108,7 +110,19 @@ class SSIApiClient:
                 )
             else:
                 if response.status_code == 200:
-                    return response.json()
+                    data = response.json()
+
+                    logger.info(
+                        "downstream_api_success",
+                        path=path,
+                        status_code=response.status_code,
+                        response_size=len(response.content),
+                        response_keys=list(data.keys()) if isinstance(data, dict) else None,
+                    )
+
+                    return data
+
+  
 
                 if response.status_code in RETRYABLE_STATUS_CODES and attempt < attempts:
                     logger.warning(
