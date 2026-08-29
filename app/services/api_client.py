@@ -12,9 +12,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import date
-from importlib.resources import path
 from typing import Any
-from urllib import response
 
 import httpx
 
@@ -122,7 +120,6 @@ class SSIApiClient:
 
                     return data
 
-  
 
                 if response.status_code in RETRYABLE_STATUS_CODES and attempt < attempts:
                     logger.warning(

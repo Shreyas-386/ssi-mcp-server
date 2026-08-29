@@ -38,7 +38,7 @@ ssi-mcp-server/
 │       ├── authentication.py     # Bearer-token ASGI middleware (HTTP transport only)
 │       └── error_handler.py      # Per-tool logging + exception normalization
 ├── tests/
-├── .env                          # Local dev config template (git-ignored)
+├── .env.example                  # Config template (copy to .env, git-ignored)
 ├── requirements.txt
 ├── run.py
 └── README.md
@@ -50,15 +50,15 @@ ssi-mcp-server/
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-cp .env .env.local   # or edit .env directly for local dev
+cp .env.example .env   # then fill in the values
 ```
 
-Set the required environment variables (see `.env` for the full list and
-defaults):
+Set the required environment variables (see `.env.example` for the full
+list and defaults):
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `SSI_API_BASE_URL` | Yes | Base URL of the existing SSi REST API. |
+| `SSI_API_BASE_URL` | No (defaults to the SSi production host) | Base URL of the existing SSi REST API. |
 | `SSI_API_KEY` | Yes | Downstream service credential sent to the SSi REST API. |
 | `MCP_AUTH_TOKEN` | Yes (HTTP transport) | Bearer token MCP clients must present. |
 | `REQUIRE_CLIENT_AUTH` | No (default `true`) | Set `false` to disable auth for local stdio dev. |
@@ -86,8 +86,10 @@ front of this in production):
 TRANSPORT=streamable-http python run.py
 ```
 
-The MCP endpoint is served at `/mcp`; a health check for load balancers /
-orchestrators is served at `/health` (unauthenticated).
+The MCP endpoint is served at `/mcp`. A plain REST bridge for ChatGPT
+Custom Actions (which cannot speak the MCP wire protocol) is served at
+`POST /chatgpt`, behind the same bearer-token auth. A health check for load
+balancers / orchestrators is served at `/health` (unauthenticated).
 
 ## Authentication
 
