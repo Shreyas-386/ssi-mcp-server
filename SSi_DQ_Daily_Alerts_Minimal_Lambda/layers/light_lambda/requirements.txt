@@ -1,0 +1,5 @@
+urllib3==1.25.11
+elasticsearch==7.9.1
+requests-aws4auth
+boto3
+pytz
