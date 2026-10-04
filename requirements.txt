@@ -3,7 +3,7 @@
 # structuredContent (used in every tool response, see the HLD's worked
 # example) requires mcp>=1.10; older 1.9.x builds CallToolResult without a
 # structuredContent field at all, so do not downgrade below 1.10 here.
-mcp==1.12.4
+mcp==1.28.1
 
 # HTTP client for calling the downstream SSi REST APIs
 httpx>=0.27,<1.0
