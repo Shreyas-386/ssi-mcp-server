@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Minimal local-build template for the legacy POST /alerts Lambda.
+
+Parameters:
+  DailyGraphsFunctionName:
+    Type: String
+    Default: ""
+  ProdEsHost:
+    Type: String
+    Default: ""
+  StgEsUsername:
+    Type: String
+    Default: ""
+    NoEcho: true
+  StgEsPassword:
+    Type: String
+    Default: ""
+    NoEcho: true
+
+Globals:
+  Function:
+    Runtime: python3.9
+    Handler: app.lambda_handler
+    Timeout: 500
+    MemorySize: 2048
+    Environment:
+      Variables:
+        AWS_EC2_METADATA_DISABLED: "true"
+        DAILY_GRAPHS_FUNCTION_NAME: !Ref DailyGraphsFunctionName
+        PROD_ES_HOST: !Ref ProdEsHost
+        STG_ES_USERNAME: !Ref StgEsUsername
+        STG_ES_PASSWORD: !Ref StgEsPassword
+
+Resources:
+  LightLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: python3.9
+    Properties:
+      ContentUri: layers/light_lambda
+      CompatibleRuntimes: [python3.9]
+
+  CommonCodeLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: layers/common
+      CompatibleRuntimes: [python3.9]
+
+  StagingCodeLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: layers/common_stg
+      CompatibleRuntimes: [python3.9]
+
+  AlertsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: Alerts
+      Layers:
+        - !Ref LightLambdaLayer
+        - !Ref CommonCodeLayer
+        - !Ref StagingCodeLayer
+      Events:
+        AlertsApi:
+          Type: Api
+          Properties:
+            Path: /alerts
+            Method: post
+
+Outputs:
+  AlertsFunctionName:
+    Value: !Ref AlertsFunction
