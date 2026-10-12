@@ -16,6 +16,9 @@ venv/
 .venv/
 env/
 
+# Local compose overrides (secrets)
+.env.local
+
 # Test / coverage artifacts
 .pytest_cache/
 .coverage

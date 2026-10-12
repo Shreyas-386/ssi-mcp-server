@@ -1,0 +1,22 @@
+# Local smoke test for the HTTP transport (not for production secrets).
+# Usage:  cp .env.example .env  # fill SSI_API_KEY + MCP_AUTH_TOKEN
+#         docker compose up --build
+
+services:
+  ssi-mcp-server:
+    build: .
+    ports:
+      - "${PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      TRANSPORT: streamable-http
+      HOST: 0.0.0.0
+      PORT: 8080
+      ENVIRONMENT: ${ENVIRONMENT:-staging}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      REQUIRE_CLIENT_AUTH: ${REQUIRE_CLIENT_AUTH:-true}
+      SSI_API_BASE_URL: ${SSI_API_BASE_URL:-https://dailygraphs.finsoftai.com}
+      SSI_API_KEY: ${SSI_API_KEY:?Set SSI_API_KEY in .env for compose}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:?Set MCP_AUTH_TOKEN in .env for compose}
+    restart: unless-stopped

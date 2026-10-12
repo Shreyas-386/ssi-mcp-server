@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 
 from app.config.settings import get_settings
+from app.config.startup import validate_settings
 from app.middleware.authentication import apply_authentication_middleware
 from app.server import create_server
 from app.utils.logger import configure_logging, get_logger
@@ -51,6 +52,7 @@ def _run_http() -> None:
 def main() -> None:
     configure_logging()
     settings = get_settings()
+    validate_settings(settings)
 
     if settings.transport == "stdio":
         asyncio.run(_run_stdio())

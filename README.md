@@ -25,6 +25,7 @@ ssi-mcp-server/
 │   ├── server.py                # FastMCP server construction + tool registration
 │   ├── config/
 │   │   ├── settings.py          # Environment-driven configuration (pydantic-settings)
+│   │   ├── startup.py           # Fail-fast deployment configuration checks
 │   │   └── constants.py         # Endpoint paths, validation rules, tool names
 │   ├── tools/                   # One MCP tool per file
 │   ├── services/
@@ -38,13 +39,19 @@ ssi-mcp-server/
 │       ├── authentication.py     # Bearer-token ASGI middleware (HTTP transport only)
 │       └── error_handler.py      # Per-tool logging + exception normalization
 ├── tests/
+├── .github/workflows/ci.yml      # pytest + Docker build smoke test
+├── Dockerfile                    # Production image (streamable-http on :8080)
+├── docker-compose.yml            # Local HTTP smoke test
 ├── .env.example                  # Config template (copy to .env, git-ignored)
-├── requirements.txt
+├── requirements.txt              # Production/runtime dependencies
+├── requirements-dev.txt          # pytest, respx, etc.
 ├── run.py
 └── README.md
 ```
 
 ## Setup
+
+Requires **Python 3.12+** (see `.python-version`, Dockerfile, and CI).
 
 ```bash
 python3 -m venv venv
@@ -114,9 +121,57 @@ logging around every call and ensures unexpected bugs never leak internal
 details to the client. See the comments in `app/utils/exceptions.py` for the
 exact text shape a client receives on failure.
 
+## Deployment
+
+The production image runs **streamable-http** on port **8080**, exposes
+`/health` for probes, and expects secrets via environment variables (never
+baked into the image).
+
+### Docker
+
+Build and run locally (set real credentials via `-e` or an env file):
+
+```bash
+docker build -t ssi-mcp-server .
+docker run --rm -p 8080:8080 \
+  -e SSI_API_KEY='…' \
+  -e MCP_AUTH_TOKEN='…' \
+  -e ENVIRONMENT=production \
+  ssi-mcp-server
+```
+
+Or use Compose after copying and filling `.env`:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+### Production checklist
+
+| Item | Notes |
+| --- | --- |
+| `TRANSPORT=streamable-http` | Default in the Docker image; required for remote MCP / ChatGPT. |
+| `SSI_API_KEY` | Required when `ENVIRONMENT` is `staging` or `production`. |
+| `MCP_AUTH_TOKEN` | Required when client auth is enabled (default) on HTTP transport. |
+| TLS termination | Terminate HTTPS at a reverse proxy / load balancer in front of the container. |
+| Health checks | Point probes at `GET /health` (no auth). |
+| MCP clients | Connect to `https://<host>/mcp` with `Authorization: Bearer <MCP_AUTH_TOKEN>`. |
+| ChatGPT Custom Actions | `POST https://<host>/chatgpt` with the same bearer token. |
+
+On startup, `app/config/startup.py` validates required secrets and exits
+with a non-zero status if configuration is invalid (so orchestrators can
+surface misconfiguration early).
+
+### CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `pytest` on Python 3.12 and
+builds the Docker image with a container health smoke test.
+
 ## Testing
 
 ```bash
+pip install -r requirements-dev.txt
 pytest
 ```
 
