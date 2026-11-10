@@ -51,7 +51,7 @@ class Settings(BaseSettings):
         description="Shared-secret bearer token MCP clients must present over HTTP transport.",
     )
     require_client_auth: bool = Field(
-        default=True,
+        default=False,
         description="If False, skips bearer-token enforcement (local/dev stdio use only).",
     )
 

@@ -25,12 +25,6 @@ def validate_settings(settings: Settings) -> None:
             "REQUIRE_CLIENT_AUTH=true."
         )
 
-    if settings.environment in ("staging", "production"):
-        if not settings.ssi_api_key.strip():
-            errors.append(
-                f"SSI_API_KEY is required when ENVIRONMENT={settings.environment}."
-            )
-
     if errors:
         message = "Invalid configuration:\n  - " + "\n  - ".join(errors)
         print(message, file=sys.stderr)

@@ -53,9 +53,11 @@ def extract_bearer_token(authorization_header: str | None) -> str | None:
     """Pull the token out of a raw 'Authorization: Bearer <token>' header."""
     if not authorization_header:
         return None
-    if not authorization_header.startswith(BEARER_PREFIX):
+    # Auth scheme is case-insensitive per RFC 7235.
+    scheme, _, token = authorization_header.strip().partition(" ")
+    if scheme.lower() != BEARER_PREFIX.strip().lower():
         return None
-    return authorization_header[len(BEARER_PREFIX):].strip() or None
+    return token.strip() or None
 
 
 def get_downstream_auth_headers() -> dict[str, str]:
