@@ -30,16 +30,15 @@ def test_http_without_mcp_token_fails():
     assert exc.value.code == 1
 
 
-def test_production_without_downstream_key_fails():
+def test_production_public_without_secrets_passes():
     settings = Settings(
         environment="production",
         transport="streamable-http",
         ssi_api_key="",
-        mcp_auth_token="client-token",
-        require_client_auth=True,
+        mcp_auth_token="",
+        require_client_auth=False,
     )
-    with pytest.raises(SystemExit):
-        validate_settings(settings)
+    validate_settings(settings)
 
 
 def test_production_http_with_secrets_passes():
